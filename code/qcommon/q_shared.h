@@ -27,11 +27,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // A user mod should never modify this file
 
 #ifdef STANDALONE
-  #define PRODUCT_NAME			"iofoo3"
-  #define BASEGAME			"foobar"
-  #define CLIENT_WINDOW_TITLE     	"changeme"
-  #define CLIENT_WINDOW_MIN_TITLE 	"changeme2"
-  #define GAMENAME_FOR_MASTER		"iofoo3"	// must NOT contain whitespaces
+  #define PRODUCT_NAME			"ioquake3"
+  #define BASEGAME			"baseq3"
+  #define CLIENT_WINDOW_TITLE     	"ioquake3"
+  #define CLIENT_WINDOW_MIN_TITLE 	"ioq3"
+  #define GAMENAME_FOR_MASTER		"Quake3Arena"	// must NOT contain whitespaces
 #else
   #define PRODUCT_NAME			"ioq3"
   #define BASEGAME			"baseq3"
