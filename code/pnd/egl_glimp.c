@@ -8,7 +8,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include <EGL/egl.h>
+#include <GLES/egl.h>
 #include <GLES/gl.h>
 
 #include "egl_glimp.h"
@@ -20,9 +20,6 @@ Window win = 0;
 EGLContext eglContext = NULL;
 EGLDisplay eglDisplay = NULL;
 EGLSurface eglSurface = NULL;
-
-int pandora_driver_mode_x11 = 0;
-cvar_t* cvarPndMode;
 
 int Sys_XTimeToSysTime(Time xtime)
 {
@@ -103,8 +100,10 @@ static void make_window(Display * dpy, Screen * scr, EGLDisplay eglDisplay,
 	EGLint config_count;
 	XWindowAttributes WinAttr;
 	int XResult = BadImplementation;
-	int blackColour;
+	int blackColour = BlackPixel(dpy, DefaultScreen(dpy));
 	EGLint cfg_attribs[] = {
+		EGL_NATIVE_VISUAL_TYPE, 0,
+
 		/* RGB565 */
 		EGL_BUFFER_SIZE, 16,
 		EGL_RED_SIZE, 5,
@@ -120,25 +119,21 @@ static void make_window(Display * dpy, Screen * scr, EGLDisplay eglDisplay,
 	};
 	EGLint i;
 
-	if (pandora_driver_mode_x11)
-	{
-		blackColour = BlackPixel(dpy, DefaultScreen(dpy));
-		win =
-		    XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 1, 1, 0,
-					blackColour, blackColour);
-		XStoreName(dpy, win, WINDOW_CLASS_NAME);
+	win =
+	    XCreateSimpleWindow(dpy, DefaultRootWindow(dpy), 0, 0, 1, 1, 0,
+				blackColour, blackColour);
+	XStoreName(dpy, win, WINDOW_CLASS_NAME);
 
-		XSelectInput(dpy, win, X_MASK);
+	XSelectInput(dpy, win, X_MASK);
 
-		if (!(XResult = XGetWindowAttributes(dpy, win, &WinAttr)))
-			GLimp_HandleError();
+	if (!(XResult = XGetWindowAttributes(dpy, win, &WinAttr)))
+		GLimp_HandleError();
 
-		GLimp_DisableComposition();
-		XMapWindow(dpy, win);
-		GLimp_DisableComposition();
+	GLimp_DisableComposition();
+	XMapWindow(dpy, win);
+	GLimp_DisableComposition();
 
-		XFlush(dpy);
-	}
+	XFlush(dpy);
 
 	if (!eglGetConfigs(eglDisplay, configs, MAX_NUM_CONFIGS, &config_count))
 		GLimp_HandleError();
@@ -147,24 +142,12 @@ static void make_window(Display * dpy, Screen * scr, EGLDisplay eglDisplay,
 	    (eglDisplay, cfg_attribs, configs, MAX_NUM_CONFIGS, &config_count))
 		GLimp_HandleError();
 
-	for (i = 0; i < config_count; i++)
-	{
-		if (pandora_driver_mode_x11)
-		{
-			if ((eglSurface =
-			    eglCreateWindowSurface(eglDisplay, configs[i],
-						    (NativeDisplayType) win,
-						    NULL)) != EGL_NO_SURFACE)
-				break;
-		}
-		else
-		{
-			if ((eglSurface =
-			    eglCreateWindowSurface( eglDisplay, configs[i],
-						    (NativeDisplayType)NULL,
-						    NULL)) != EGL_NO_SURFACE)
-				break;
-		}
+	for (i = 0; i < config_count; i++) {
+		if ((eglSurface =
+		     eglCreateWindowSurface(eglDisplay, configs[i],
+					    (NativeWindowType) win,
+					    NULL)) != EGL_NO_SURFACE)
+			break;
 	}
 	if (eglSurface == EGL_NO_SURFACE)
 		GLimp_HandleError();
@@ -256,6 +239,25 @@ static void GLimp_InitExtensions( void )
 
 	// GL_EXT_texture_env_add
 	glConfig.textureEnvAddAvailable = qtrue; //qfalse;
+#if 0
+	if ( GLimp_HaveExtension( "EXT_texture_env_add" ) )
+	{
+		if ( r_ext_texture_env_add->integer )
+		{
+			glConfig.textureEnvAddAvailable = qtrue;
+			ri.Printf( PRINT_ALL, "...using GL_EXT_texture_env_add\n" );
+		}
+		else
+		{
+			glConfig.textureEnvAddAvailable = qfalse;
+			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_env_add\n" );
+		}
+	}
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_EXT_texture_env_add not found\n" );
+	}
+#endif
 
 	// GL_ARB_multitexture
 	/*
@@ -294,13 +296,61 @@ static void GLimp_InitExtensions( void )
 			ri.Printf( PRINT_ALL, "...ignoring GL_ARB_multitexture\n" );
 		}
 	}
+#if 0
+	else
+	{
+		ri.Printf( PRINT_ALL, "...GL_ARB_multitexture not found\n" );
+	}
+#endif
 
+#if 0
+	// GL_EXT_compiled_vertex_array
+	if ( GLimp_HaveExtension( "GL_EXT_compiled_vertex_array" ) )
+	{
+		if ( r_ext_compiled_vertex_array->value )
+		{
+			ri.Printf( PRINT_ALL, "...using GL_EXT_compiled_vertex_array\n" );
+			qglLockArraysEXT = ( void ( APIENTRY * )( GLint, GLint ) ) SDL_GL_GetProcAddress( "glLockArraysEXT" );
+			qglUnlockArraysEXT = ( void ( APIENTRY * )( void ) ) SDL_GL_GetProcAddress( "glUnlockArraysEXT" );
+			if (!qglLockArraysEXT || !qglUnlockArraysEXT)
+			{
+				ri.Error (ERR_FATAL, "bad getprocaddress");
+			}
+		}
+		else
+		{
+			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_compiled_vertex_array\n" );
+		}
+	}
+	else
+#endif
 	{
 		ri.Printf( PRINT_ALL, "...GL_EXT_compiled_vertex_array not found\n" );
 	}
 
 	textureFilterAnisotropic = qfalse;
-
+#if 0
+	if ( GLimp_HaveExtension( "GL_EXT_texture_filter_anisotropic" ) )
+	{
+		if ( r_ext_texture_filter_anisotropic->integer ) {
+			qglGetIntegerv( GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, (GLint *)&maxAnisotropy );
+			if ( maxAnisotropy <= 0 ) {
+				ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not properly supported!\n" );
+				maxAnisotropy = 0;
+			}
+			else
+			{
+				ri.Printf( PRINT_ALL, "...using GL_EXT_texture_filter_anisotropic (max: %i)\n", maxAnisotropy );
+				textureFilterAnisotropic = qtrue;
+			}
+		}
+		else
+		{
+			ri.Printf( PRINT_ALL, "...ignoring GL_EXT_texture_filter_anisotropic\n" );
+		}
+	}
+	else
+#endif
 	{
 		ri.Printf( PRINT_ALL, "...GL_EXT_texture_filter_anisotropic not found\n" );
 	}
@@ -308,53 +358,33 @@ static void GLimp_InitExtensions( void )
 
 void GLimp_Init(void)
 {
-	Screen *screen = NULL;
+	Screen *screen;
 	Visual *vis;
 	EGLint major, minor;
 
 	ri.Printf(PRINT_ALL, "Initializing OpenGL subsystem\n");
 
-	cvarPndMode = ri.Cvar_Get("x11", "0", 0);
-	pandora_driver_mode_x11 = cvarPndMode->value;
-	
 	bzero(&glConfig, sizeof(glConfig));
 
-	if (pandora_driver_mode_x11)
-	{
-		if (!(dpy = XOpenDisplay(NULL))) {
-			printf("Error: couldn't open display \n");
-			assert(0);
-		}
-		screen = XDefaultScreenOfDisplay(dpy);
-		vis = DefaultVisual(dpy, DefaultScreen(dpy));
+	if (!(dpy = XOpenDisplay(NULL))) {
+		printf("Error: couldn't open display \n");
+		assert(0);
+	}
+	screen = XDefaultScreenOfDisplay(dpy);
+	vis = DefaultVisual(dpy, DefaultScreen(dpy));
 
-		eglDisplay = eglGetDisplay((NativeDisplayType) dpy);
-	}
-	else
-	{
-		dpy = NULL;
-		eglDisplay = eglGetDisplay((NativeDisplayType)NULL );
-	}
-	
-		if (!eglInitialize(eglDisplay, &major, &minor))
-			GLimp_HandleError();	
-	
+	eglDisplay = eglGetDisplay((NativeDisplayType) dpy);
+	if (!eglInitialize(eglDisplay, &major, &minor))
+		GLimp_HandleError();
+
 	make_window(dpy, screen, eglDisplay, &eglSurface, &eglContext);
 
-	if (pandora_driver_mode_x11)
-	{
-		XMoveResizeWindow(dpy, win, 0, 0, WidthOfScreen(screen),
-				HeightOfScreen(screen));
-		glConfig.vidWidth = WidthOfScreen(screen);
-		glConfig.vidHeight = HeightOfScreen(screen);
-	}
-	else
-	{
-		glConfig.vidWidth  = 800;
-		glConfig.vidHeight = 480;
-	}
-	
-	glConfig.isFullscreen = r_fullscreen->integer;	
+	XMoveResizeWindow(dpy, win, 0, 0, WidthOfScreen(screen),
+			  HeightOfScreen(screen));
+
+	glConfig.isFullscreen = r_fullscreen->integer;
+	glConfig.vidWidth = WidthOfScreen(screen);
+	glConfig.vidHeight = HeightOfScreen(screen);
 	glConfig.windowAspect = (float)glConfig.vidWidth / glConfig.vidHeight;
 	// FIXME
 	//glConfig.colorBits = 0
@@ -400,8 +430,7 @@ void GLimp_EndFrame(void)
 		eglSwapBuffers(eglDisplay, eglSurface);
 	}
 
-	if (pandora_driver_mode_x11)
-		XForceScreenSaver(dpy, ScreenSaverReset);
+	XForceScreenSaver(dpy, ScreenSaverReset);
 
 }
 
@@ -414,11 +443,8 @@ void GLimp_Shutdown(void)
 	eglMakeCurrent(eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	eglTerminate(eglDisplay);
 
-	if (pandora_driver_mode_x11)
-	{
-		XDestroyWindow(dpy, win);
-		XCloseDisplay(dpy);
-	}
+	XDestroyWindow(dpy, win);
+	XCloseDisplay(dpy);
 }
 
 #if 1
