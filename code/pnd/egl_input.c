@@ -293,6 +293,7 @@ static char *XLateKey(XKeyEvent * ev, int *key)
 		*key = '0';
 		break;
 
+	case XK_grave:
 	case XK_twosuperior:
 	case 0xff20:			/* N900: Fn + Sym/Ctrl */
 		*key = K_CONSOLE;
