@@ -49,7 +49,7 @@ static int win_x, win_y;
 ** you can turn on some debugging and verbose of the keyboard code with #define KBD_DBG
 ******************************************************************************/
 
-#define KBD_DBG
+//#define KBD_DBG
 
 static char *XLateKey(XKeyEvent * ev, int *key)
 {
