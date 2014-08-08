@@ -14,7 +14,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
-#include <EGL/egl.h>
+#include <GLES/egl.h>
 #include <GLES/gl.h>
 
 #include "egl_input.h"
@@ -55,8 +55,9 @@ void qglCallList(GLuint list);
 void qglDrawBuffer(GLenum mode);
 void qglLockArrays(GLint i, GLsizei size);
 void qglUnlockArrays(void);
-void GLimp_SetGamma(unsigned char red[256], unsigned char green[256],unsigned char blue[256]);
-//qboolean GLimp_SpawnRenderThread(void (*function) (void));
+void GLimp_SetGamma(unsigned char red[256], unsigned char green[256],
+		    unsigned char blue[256]);
+qboolean GLimp_SpawnRenderThread(void (*function) (void));
 void GLimp_FrontEndSleep(void);
 void *GLimp_RendererSleep(void);
 void GLimp_RenderThreadWrapper(void *data);

@@ -339,7 +339,7 @@ ifeq ($(PLATFORM),linux)
   CLIENT_LIBS=$(SDL_LIBS) -lGL
 
   ifeq ($(ARCH),arm)
-    CLIENT_LIBS = $(SDL_LIBS) -lGLESv1_CM -lX11
+    CLIENT_LIBS = $(SDL_LIBS) -lGLESv1_CM -lX11 -lEGL
   endif
 
   ifeq ($(USE_OPENAL),1)
@@ -1588,9 +1588,7 @@ endif
 
 Q3POBJ += \
    $(B)/client/egl_glimp.o \
-   $(B)/client/egl_input.o \
-   $(B)/client/pnd_event.o
-#  $(B)/client/sdl_glimp.o
+   $(B)/client/egl_input.o
 
 Q3POBJ_SMP += \
    $(Q3POBJ)
